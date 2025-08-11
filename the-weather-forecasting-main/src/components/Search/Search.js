@@ -1,36 +1,45 @@
 import React, { useState } from 'react';
-import { AsyncPaginate } from 'react-select-async-paginate';
-import { fetchCities } from '../../api/OpenWeatherService';
+import { Button } from '@mui/material';
+import { reverseGeocode } from '../../api/OpenWeatherService';
 
 const Search = ({ onSearchChange }) => {
-  const [searchValue, setSearchValue] = useState(null);
+  const [isGetting, setIsGetting] = useState(false);
 
-  const loadOptions = async (inputValue) => {
-    const citiesList = await fetchCities(inputValue);
+  const handleGetForecast = () => {
+    if (!navigator.geolocation) {
+      return;
+    }
 
-    return {
-      options: citiesList.data.map((city) => {
-        return {
-          value: `${city.latitude} ${city.longitude}`,
-          label: `${city.name}, ${city.countryCode}`,
-        };
-      }),
-    };
-  };
+    setIsGetting(true);
 
-  const onChangeHandler = (enteredData) => {
-    setSearchValue(enteredData);
-    onSearchChange(enteredData);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        let label = 'Current Location';
+        try {
+          const place = await reverseGeocode(latitude, longitude);
+          if (place) {
+            const { name, country, state } = place;
+            label = `${name || 'Current Location'}${state ? ', ' + state : ''}${country ? ', ' + country : ''}`;
+          }
+        } catch (_) {
+          // ignore and fallback to default label
+        }
+
+        onSearchChange({ value: `${latitude} ${longitude}`, label });
+        setIsGetting(false);
+      },
+      () => {
+        setIsGetting(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
   };
 
   return (
-    <AsyncPaginate
-      placeholder="Search for cities"
-      debounceTimeout={600}
-      value={searchValue}
-      onChange={onChangeHandler}
-      loadOptions={loadOptions}
-    />
+    <Button variant="contained" color="primary" onClick={handleGetForecast} disabled={isGetting}>
+      {isGetting ? 'Getting forecast…' : 'Get Weather Forecast'}
+    </Button>
   );
 };
 

@@ -90,8 +90,7 @@ function App() {
           lineHeight: '22px',
         }}
       >
-        Explore current weather data and 6-day forecast of more than 200,000
-        cities!
+        Get the current weather and 6-day forecast for your current location.
       </Typography>
     </Box>
   );
