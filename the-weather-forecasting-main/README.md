@@ -1,59 +1,80 @@
 ![Application screenshot](./public/screenshot.png)
 
-<br/>
-<br/>
 
-With [The Weather Forecasting](https://the-weather-forecasting.netlify.app) user can search locations by city name and observe the weather for the next 5-6 days and 3 hour interval.
-<br />
-The app is developed using React.js and material-UI.
+With [The Weather Forecasting](https://the-weather-forecasting.netlify.app) you can search locations by city name or use your current location and see the current weather plus a 5–6 day outlook with hourly breakdowns.
+The app is built with React and MUI.
 
-<br/>
 
-## 💻 Live Demo:
+## Live Demo
 
 https://the-weather-forecasting.netlify.app
 
-<br/>
 
-## ✨ Getting Started
+## Getting Started
 
-- Make sure you already have `Node.js` and `npm` installed in your system.
-- You need an API key from [OpenWeatherMap](https://openweathermap.org/). After creating an account, [grab your key](https://home.openweathermap.org/api_keys).
-- Then, under the `src` directory, go to `api/OpenWeatherService` and replace `WEATHER_API_KEY` with your OpenWeatherMap API Key.
-  - **`api/OpenWeatherService.js`**: It contains the code related to the back-end of the application.
-
-<br/>
-
-## ⚡ Install
-
-- Clone the repository:
+- Prerequisite: Node.js and npm
+- Clone and install:
 
 ```bash
 git clone https://github.com/Amin-Awinti/the-weather-forecasting.git
-
+cd the-weather-forecasting-main
+npm install
+npm start
 ```
 
-- Install the packages using the command `npm install`
 
-<br/>
+## Data sources (Open‑Meteo)
 
-## 📙 Used libraries
+This app now uses the free, open-source Open‑Meteo APIs. No API key is required.
+- Weather Forecast API: `https://api.open-meteo.com/v1/forecast`
+- Geocoding API: `https://geocoding-api.open-meteo.com/v1`
 
-- `react-js`
-- `material-ui`
+Attribution required by CC BY 4.0: “Weather data by Open‑Meteo.com”.
 
-Check `packages.json` for details
 
-<br/>
+## What changed vs. before
 
-## 📄 Todos
+- Replaced OpenWeatherMap with Open‑Meteo for current and hourly forecast
+- Replaced GeoDB/RapidAPI with Open‑Meteo Geocoding (search and reverse geocode)
+- Kept the internal data shape so existing components keep working
+
+Files of interest:
+- `src/api/OpenWeatherService.js` — Open‑Meteo integration and mapping
+- `src/utilities/ApiService.js` — same integration exposed for utilities
+- `scripts/backtest-openmeteo.js` — quick CLI to verify data mapping
+
+
+## Scripts
+
+- Run dev server:
+```bash
+npm start
+```
+- Build production bundle:
+```bash
+npm run build
+```
+- Quick backtest (sample coords can be overridden via TEST_LAT/TEST_LON):
+```bash
+node scripts/backtest-openmeteo.js
+# or
+TEST_LAT=52.52 TEST_LON=13.41 node scripts/backtest-openmeteo.js
+```
+
+
+## Libraries
+
+- React 18
+- MUI (Material UI)
+
+
+## Todos
 
 - [ ] Styled-components
-- [ ] Convert the entire project to TypeScript
-- [ ] Unit Testing
-- [ ] On launch, find user location weather by utilizing GeolocationAPI/GEOCODING
-- [ ] Celcius/Fahrenheit conversion
-- [ ] Dark/Light Mode
+- [ ] Convert to TypeScript
+- [ ] Unit tests
+- [ ] Temperature unit toggle (°C/°F)
+- [ ] Dark/Light mode
 
-<br/>
-Thank You ☺
+
+Thanks ☺
