@@ -38,3 +38,7 @@ Thumbs.db
 
 # Archives
 *.tgz
+
+# Nested project ignores
+/the-weather-forecasting-main/node_modules/
+/the-weather-forecasting-main/build/

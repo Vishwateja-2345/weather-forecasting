@@ -177,3 +177,19 @@ export async function fetchCities(input) {
     return { data: [] };
   }
 }
+
+export async function reverseGeocode(lat, lon) {
+  try {
+    const response = await fetch(
+      `https://api.openweathermap.org/geo/1.0/reverse?lat=${lat}&lon=${lon}&limit=1&appid=${WEATHER_API_KEY}`
+    );
+    const data = await response.json();
+    if (Array.isArray(data) && data.length > 0) {
+      return data[0];
+    }
+    return null;
+  } catch (error) {
+    console.log(error);
+    return null;
+  }
+}
