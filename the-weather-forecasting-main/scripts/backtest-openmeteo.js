@@ -1,4 +1,5 @@
-const GEO_API_URL = 'https://geocoding-api.open-meteo.com/v1';
+#!/usr/bin/env node
+
 const OPEN_METEO_API_URL = 'https://api.open-meteo.com/v1/forecast';
 
 function mapWmoToDescription(code) {
@@ -84,91 +85,72 @@ function toOwForecastListFromHourly(hourly, isDaySeries) {
   return list;
 }
 
-export async function fetchWeatherData(lat, lon) {
-  try {
-    const params = new URLSearchParams({
-      latitude: String(lat),
-      longitude: String(lon),
-      hourly: [
-        'temperature_2m',
-        'relative_humidity_2m',
-        'cloud_cover',
-        'wind_speed_10m',
-        'weather_code',
-        'is_day',
-      ].join(','),
-      current: [
-        'temperature_2m',
-        'apparent_temperature',
-        'relative_humidity_2m',
-        'weather_code',
-        'cloud_cover',
-        'wind_speed_10m',
-        'is_day',
-      ].join(','),
-      wind_speed_unit: 'ms',
-      timezone: 'auto',
-      forecast_days: '7',
-    });
+async function main() {
+  const latitude = process.env.TEST_LAT || '17.384';
+  const longitude = process.env.TEST_LON || '78.4564';
 
-    const response = await fetch(`${OPEN_METEO_API_URL}?${params.toString()}`);
-    const data = await response.json();
+  const params = new URLSearchParams({
+    latitude: String(latitude),
+    longitude: String(longitude),
+    hourly: [
+      'temperature_2m',
+      'relative_humidity_2m',
+      'cloud_cover',
+      'wind_speed_10m',
+      'weather_code',
+      'is_day',
+    ].join(','),
+    current: [
+      'temperature_2m',
+      'apparent_temperature',
+      'relative_humidity_2m',
+      'weather_code',
+      'cloud_cover',
+      'wind_speed_10m',
+      'is_day',
+    ].join(','),
+    wind_speed_unit: 'ms',
+    timezone: 'auto',
+    forecast_days: '2',
+  });
 
-    const current = data.current || {};
-    const currentWeather = {
-      main: {
-        temp: current.temperature_2m,
-        feels_like: current.apparent_temperature,
-        humidity: current.relative_humidity_2m,
+  const res = await fetch(`${OPEN_METEO_API_URL}?${params.toString()}`);
+  if (!res.ok) {
+    console.error('Open-Meteo request failed', res.status, await res.text());
+    process.exit(1);
+  }
+  const data = await res.json();
+
+  const current = data.current || {};
+  const currentWeather = {
+    main: {
+      temp: current.temperature_2m,
+      feels_like: current.apparent_temperature,
+      humidity: current.relative_humidity_2m,
+    },
+    wind: { speed: current.wind_speed_10m },
+    clouds: { all: current.cloud_cover },
+    weather: [
+      {
+        description: mapWmoToDescription(current.weather_code),
+        icon: mapWmoToIconBase(current.weather_code, current.is_day === 1),
       },
-      wind: { speed: current.wind_speed_10m },
-      clouds: { all: current.cloud_cover },
-      weather: [
-        {
-          description: mapWmoToDescription(current.weather_code),
-          icon: mapWmoToIconBase(current.weather_code, current.is_day === 1),
-        },
-      ],
-    };
+    ],
+  };
 
-    const hourly = data.hourly || {};
-    const forecastList = toOwForecastListFromHourly(hourly, hourly.is_day);
-    const forecastResponse = { list: forecastList };
+  const hourly = data.hourly || {};
+  const forecastList = toOwForecastListFromHourly(hourly, hourly.is_day);
 
-    return [currentWeather, forecastResponse];
-  } catch (error) {
-    console.log(error);
-    throw error;
+  console.log('Current mapped:', currentWeather);
+  console.log('Next 6 hours:');
+  const now = Date.now() / 1000;
+  const next = forecastList.filter((i) => i.dt > now).slice(0, 6);
+  for (const item of next) {
+    console.log({ time: item.dt_txt, temp: item.main.temp, desc: item.weather[0].description, icon: item.weather[0].icon, wind: item.wind.speed, clouds: item.clouds.all, humidity: item.main.humidity });
   }
 }
 
-export async function fetchCities(input) {
-  try {
-    if (!input || input.trim().length === 0) {
-      return { data: [] };
-    }
-
-    const params = new URLSearchParams({
-      name: input,
-      count: '10',
-      language: 'en',
-      format: 'json',
-    });
-
-    const res = await fetch(`${GEO_API_URL}/search?${params.toString()}`);
-    const json = await res.json();
-
-    const results = json?.results || [];
-    const data = results.map((city) => ({
-      name: city.name,
-      countryCode: city.country_code,
-      latitude: city.latitude,
-      longitude: city.longitude,
-    }));
-
-    return { data };
-  } catch (error) {
-    console.log(error);
-    return { data: [] };
-  }
-}
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});
