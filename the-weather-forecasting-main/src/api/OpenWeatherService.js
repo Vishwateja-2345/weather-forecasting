@@ -1,10 +1,20 @@
 const GEO_API_URL = 'https://geocode.maps.co';
 const OPEN_METEO_API_URL = 'https://api.open-meteo.com/v1/forecast';
 
+let LOC_API_FROM_GENERATED;
+try {
+  // This file is generated at build time by scripts/inject-loc-api.js
+  // eslint-disable-next-line import/no-unresolved, global-require
+  LOC_API_FROM_GENERATED = require('../config/locApi').LOC_API_FROM_ENV;
+} catch (_) {
+  LOC_API_FROM_GENERATED = '';
+}
+
 // Read API key from env (Netlify: set REACT_APP_LOC_API or loc_api)
 const LOC_API_KEY = (typeof process !== 'undefined' && process.env)
   ? (process.env.REACT_APP_LOC_API || process.env.loc_api || '')
   : '';
+const EFFECTIVE_LOC_API_KEY = LOC_API_KEY || LOC_API_FROM_GENERATED || '';
 
 // Map WMO weather codes to app's description strings
 function mapWmoToDescription(code) {
@@ -164,7 +174,7 @@ export async function fetchCities(input) {
       format: 'json',
       limit: '10',
     });
-    if (LOC_API_KEY) params.set('api_key', LOC_API_KEY);
+    if (EFFECTIVE_LOC_API_KEY) params.set('api_key', EFFECTIVE_LOC_API_KEY);
 
     const res = await fetch(`${GEO_API_URL}/search?${params.toString()}`);
     const json = await res.json();
@@ -197,7 +207,7 @@ export async function reverseGeocode(lat, lon) {
       lon: String(lon),
       format: 'json',
     });
-    if (LOC_API_KEY) params.set('api_key', LOC_API_KEY);
+    if (EFFECTIVE_LOC_API_KEY) params.set('api_key', EFFECTIVE_LOC_API_KEY);
 
     const res = await fetch(`${GEO_API_URL}/reverse?${params.toString()}`);
     const json = await res.json();
