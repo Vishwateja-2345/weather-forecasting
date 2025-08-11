@@ -4,18 +4,12 @@ import Search from './components/Search/Search';
 import WeeklyForecast from './components/WeeklyForecast/WeeklyForecast';
 import TodayWeather from './components/TodayWeather/TodayWeather';
 import { fetchWeatherData } from './api/OpenWeatherService';
-import { transformDateFormat } from './utilities/DatetimeUtils';
 import UTCDatetime from './components/Reusable/UTCDatetime';
 import LoadingBox from './components/Reusable/LoadingBox';
 import { ReactComponent as SplashIcon } from './assets/splash-icon.svg';
 import Logo from './assets/logo.png';
 import ErrorBox from './components/Reusable/ErrorBox';
-import { ALL_DESCRIPTIONS } from './utilities/DateConstants';
 import GitHubIcon from '@mui/icons-material/GitHub';
-import {
-  getTodayForecastWeather,
-  getWeekForecastWeather,
-} from './utilities/DataUtils';
 
 function App() {
   const [todayWeather, setTodayWeather] = useState(null);
@@ -29,30 +23,51 @@ function App() {
 
     setIsLoading(true);
 
-    const currentDate = transformDateFormat();
-    const date = new Date();
-    let dt_now = Math.floor(date.getTime() / 1000);
-
     try {
-      const [todayWeatherResponse, weekForecastResponse] =
-        await fetchWeatherData(latitude, longitude);
-      const all_today_forecasts_list = getTodayForecastWeather(
-        weekForecastResponse,
-        currentDate,
-        dt_now
+      const [todayWeatherResponse, forecastPayload] = await fetchWeatherData(
+        latitude,
+        longitude
       );
 
-      const all_week_forecasts_list = getWeekForecastWeather(
-        weekForecastResponse,
-        ALL_DESCRIPTIONS
-      );
+      // Build today's hourly forecast items from hourly arrays, starting from next hour
+      const nowIso = new Date().toISOString().slice(0, 13); // yyyy-mm-ddThh
+      const times = forecastPayload?.hourly?.time || [];
+      const temps = forecastPayload?.hourly?.temperature_2m || [];
+      let todayItems = [];
+      for (let i = 0; i < times.length; i++) {
+        if (times[i].startsWith(nowIso)) {
+          const timeStr = times[i].split('T')[1].slice(0, 5);
+          todayItems.push({ time: timeStr, temperature: Math.round(temps[i]) + ' °C' });
+        }
+      }
+      // Limit to up to 6 items similar to previous behavior
+      if (todayItems.length > 6) todayItems = todayItems.slice(0, 6);
 
-      setTodayForecast([...all_today_forecasts_list]);
+      // Build week forecast list from daily arrays, up to 6 days
+      const dailyTimes = forecastPayload?.daily?.time || [];
+      const dailyTmax = forecastPayload?.daily?.temperature_2m_max || [];
+      const dailyTmin = forecastPayload?.daily?.temperature_2m_min || [];
+      const dailyWind = forecastPayload?.daily?.wind_speed_10m_max || [];
+
+      const weekList = [];
+      for (let i = 0; i < Math.min(6, dailyTimes.length); i++) {
+        // Use average of max/min as the "temp" for list item to match expected UI
+        const avgTemp = Math.round(((dailyTmax[i] ?? 0) + (dailyTmin[i] ?? 0)) / 2);
+        // We do not have humidity and clouds in daily; set placeholders or derive from hourly same day average if needed
+        weekList.push({
+          date: dailyTimes[i],
+          temp: avgTemp,
+          humidity: 0,
+          wind: typeof dailyWind[i] === 'number' ? dailyWind[i] : 0,
+          clouds: 0,
+          description: '',
+          icon: 'unknown',
+        });
+      }
+
+      setTodayForecast([...todayItems]);
       setTodayWeather({ city: enteredData.label, ...todayWeatherResponse });
-      setWeekForecast({
-        city: enteredData.label,
-        list: all_week_forecasts_list,
-      });
+      setWeekForecast({ city: enteredData.label, list: weekList });
     } catch (error) {
       setError(true);
     }
