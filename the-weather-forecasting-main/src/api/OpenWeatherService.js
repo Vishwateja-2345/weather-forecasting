@@ -1,5 +1,10 @@
-const GEO_API_URL = 'https://geocoding-api.open-meteo.com/v1';
+const GEO_API_URL = 'https://geocode.maps.co';
 const OPEN_METEO_API_URL = 'https://api.open-meteo.com/v1/forecast';
+
+// Read API key from env (Netlify: set REACT_APP_LOC_API or loc_api)
+const LOC_API_KEY = (typeof process !== 'undefined' && process.env)
+  ? (process.env.REACT_APP_LOC_API || process.env.loc_api || '')
+  : '';
 
 // Map WMO weather codes to app's description strings
 function mapWmoToDescription(code) {
@@ -147,6 +152,7 @@ export async function fetchWeatherData(lat, lon) {
   }
 }
 
+// Forward Geocode using geocode.maps.co
 export async function fetchCities(input) {
   try {
     if (!input || input.trim().length === 0) {
@@ -154,22 +160,28 @@ export async function fetchCities(input) {
     }
 
     const params = new URLSearchParams({
-      name: input,
-      count: '10',
-      language: 'en',
+      q: input,
       format: 'json',
+      limit: '10',
     });
+    if (LOC_API_KEY) params.set('api_key', LOC_API_KEY);
 
     const res = await fetch(`${GEO_API_URL}/search?${params.toString()}`);
     const json = await res.json();
 
-    const results = json?.results || [];
-    const data = results.map((city) => ({
-      name: city.name,
-      countryCode: city.country_code,
-      latitude: city.latitude,
-      longitude: city.longitude,
-    }));
+    const results = Array.isArray(json) ? json : [];
+    const data = results.map((place) => {
+      const address = place.address || {};
+      const cityCandidate =
+        address.city || address.town || address.village || address.municipality || address.hamlet || address.suburb || address.county || place.display_name || 'Unknown';
+      const countryCode = (address.country_code || '').toUpperCase();
+      return {
+        name: cityCandidate,
+        countryCode,
+        latitude: Number(place.lat),
+        longitude: Number(place.lon),
+      };
+    });
 
     return { data };
   } catch (error) {
@@ -181,24 +193,28 @@ export async function fetchCities(input) {
 export async function reverseGeocode(lat, lon) {
   try {
     const params = new URLSearchParams({
-      latitude: String(lat),
-      longitude: String(lon),
-      count: '1',
-      language: 'en',
+      lat: String(lat),
+      lon: String(lon),
       format: 'json',
     });
+    if (LOC_API_KEY) params.set('api_key', LOC_API_KEY);
 
     const res = await fetch(`${GEO_API_URL}/reverse?${params.toString()}`);
     const json = await res.json();
-    const first = Array.isArray(json?.results) && json.results.length > 0 ? json.results[0] : null;
-    if (!first) return null;
+
+    // geocode.maps.co returns a single object with an `address` field
+    const address = json?.address || {};
+    if (!json || !address) return null;
+
+    const name =
+      address.city || address.town || address.village || address.municipality || address.hamlet || address.suburb || address.county || undefined;
 
     return {
-      name: first.name,
-      state: first.admin1 || first.admin2 || first.timezone || undefined,
-      country: first.country || first.country_code,
-      latitude: first.latitude,
-      longitude: first.longitude,
+      name,
+      state: address.state || address.region || undefined,
+      country: address.country || address.country_code?.toUpperCase(),
+      latitude: Number(json.lat),
+      longitude: Number(json.lon),
     };
   } catch (error) {
     console.log(error);
