@@ -2,6 +2,7 @@ import { Box, Typography } from '@mui/material';
 import React from 'react';
 
 const CityDateDetail = (props) => {
+  const cityName = (props.city || '').split(',')[0];
   return (
     <Box
       sx={{
@@ -23,10 +24,24 @@ const CityDateDetail = (props) => {
           color: 'white',
           textTransform: 'uppercase',
           lineHeight: 1,
+          marginBottom: '6px',
+        }}
+      >
+        CURRENT LOCATION
+      </Typography>
+      <Typography
+        variant="h3"
+        component="h3"
+        sx={{
+          fontFamily: 'Poppins',
+          fontWeight: '600',
+          fontSize: { xs: '12px', sm: '14px', md: '16px' },
+          color: 'white',
+          lineHeight: 1,
           marginBottom: '8px',
         }}
       >
-        {props.city}
+        {cityName}
       </Typography>
       <Typography
         variant="h4"
