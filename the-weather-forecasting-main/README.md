@@ -1,59 +1,79 @@
 ![Application screenshot](./public/screenshot.png)
 
-<br/>
-<br/>
 
-With [The Weather Forecasting](https://the-weather-forecasting.netlify.app) user can search locations by city name and observe the weather for the next 5-6 days and 3 hour interval.
-<br />
-The app is developed using React.js and material-UI.
+## The Weather Forecasting
 
-<br/>
+A lightweight React app to get the current weather and a 6–7 day forecast for any location. You can:
+- Search by city/address (forward geocoding)
+- Use your device location (reverse geocoding)
+- See today’s conditions and a week overview
 
-## 💻 Live Demo:
+Built with React and Material UI. Weather data is powered by Open‑Meteo; geocoding is powered by geocode.maps.co.
 
+
+### Live Demo
 https://the-weather-forecasting.netlify.app
 
-<br/>
 
-## ✨ Getting Started
+### Tech stack
+- React 18 (Create React App)
+- Material UI (MUI)
+- Open‑Meteo Forecast API
+- geocode.maps.co (forward/reverse geocoding)
 
-- Make sure you already have `Node.js` and `npm` installed in your system.
-- You need an API key from [OpenWeatherMap](https://openweathermap.org/). After creating an account, [grab your key](https://home.openweathermap.org/api_keys).
-- Then, under the `src` directory, go to `api/OpenWeatherService` and replace `WEATHER_API_KEY` with your OpenWeatherMap API Key.
-  - **`api/OpenWeatherService.js`**: It contains the code related to the back-end of the application.
 
-<br/>
+### Environment variables
+Only one variable is required for geocoding:
+- `loc_api` — your geocode.maps.co API key
 
-## ⚡ Install
+On Netlify, add it in Site settings → Build & deploy → Environment → Environment variables.
+The build process will automatically inject this value so the app can call geocoding endpoints.
 
-- Clone the repository:
 
+### Getting started (local)
+1) Prerequisites: Node.js 18+
+2) Install dependencies:
 ```bash
-git clone https://github.com/vishwateja231/the-weather-forecasting.git
-
+npm install
+```
+3) Set the env var in your shell before starting (optional if you don’t need geocoding locally):
+```bash
+export loc_api=YOUR_GEOCODE_MAPS_CO_KEY
+```
+4) Run the app:
+```bash
+npm start
+```
+5) Build for production:
+```bash
+npm run build
 ```
 
-- Install the packages using the command `npm install`
 
-<br/>
+### How it works
+- Forward geocode: `GET https://geocode.maps.co/search?q={address}&api_key=${loc_api}`
+- Reverse geocode: `GET https://geocode.maps.co/reverse?lat={lat}&lon={lon}&api_key=${loc_api}`
+- Weather: `GET https://api.open-meteo.com/v1/forecast?...` (current + hourly, then grouped for daily)
 
-## 📙 Used libraries
+The UI shows a “Get Weather Forecast” button to use the browser’s Geolocation API. If permitted, it reverse‑geocodes your coordinates and displays a readable place name under “Current Location.”
 
-- `react-js`
-- `material-ui`
 
-Check `packages.json` for details
+### Scripts
+- `npm start` — start dev server
+- `npm run build` — production build
 
-<br/>
 
-## 📄 Todos
+### Repository layout
+- `src/api/OpenWeatherService.js` — API calls and response mapping
+- `src/components` — UI components
+- `src/assets` — icons and images
+- `public` — CRA public assets
 
-- [ ] Styled-components
-- [ ] Convert the entire project to TypeScript
-- [ ] Unit Testing
-- [ ] On launch, find user location weather by utilizing GeolocationAPI/GEOCODING
-- [ ] Celcius/Fahrenheit conversion
-- [ ] Dark/Light Mode
 
-<br/>
-Thank You ☺
+### Roadmap
+- [ ] Unit tests
+- [ ] Temperature unit toggle (°C/°F)
+- [ ] Dark/Light theme toggle
+
+
+Thank you! 😊
