@@ -1,5 +1,5 @@
 import React from 'react';
-import { Grid } from '@mui/material';
+import { Grid, Typography } from '@mui/material';
 import { getDayMonthFromDate } from '../../../utilities/DatetimeUtils';
 import { weatherIcon } from '../../../utilities/IconsUtils';
 import ErrorBox from '../../Reusable/ErrorBox';
@@ -55,7 +55,23 @@ const Details = ({ data }) => {
       </>
     );
 
-  return <Layout title="CURRENT WEATHER" content={content} />;
+  const sectionSubHeader = !noDataProvided ? (
+    <Typography
+      variant="subtitle2"
+      component="div"
+      sx={{
+        textAlign: 'center',
+        color: 'rgba(255,255,255,.6)',
+        marginBottom: '0.5rem',
+        fontFamily: 'Roboto Condensed',
+        fontSize: { xs: '10px', sm: '12px' },
+      }}
+    >
+      {data.city}
+    </Typography>
+  ) : null;
+
+  return <Layout title="CURRENT WEATHER" content={content} sectionSubHeader={sectionSubHeader} />;
 };
 
 export default Details;
