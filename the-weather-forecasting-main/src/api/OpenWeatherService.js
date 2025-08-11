@@ -180,14 +180,26 @@ export async function fetchCities(input) {
 
 export async function reverseGeocode(lat, lon) {
   try {
-    const response = await fetch(
-      `https://api.openweathermap.org/geo/1.0/reverse?lat=${lat}&lon=${lon}&limit=1&appid=${WEATHER_API_KEY}`
-    );
-    const data = await response.json();
-    if (Array.isArray(data) && data.length > 0) {
-      return data[0];
-    }
-    return null;
+    const params = new URLSearchParams({
+      latitude: String(lat),
+      longitude: String(lon),
+      count: '1',
+      language: 'en',
+      format: 'json',
+    });
+
+    const res = await fetch(`${GEO_API_URL}/reverse?${params.toString()}`);
+    const json = await res.json();
+    const first = Array.isArray(json?.results) && json.results.length > 0 ? json.results[0] : null;
+    if (!first) return null;
+
+    return {
+      name: first.name,
+      state: first.admin1 || first.admin2 || first.timezone || undefined,
+      country: first.country || first.country_code,
+      latitude: first.latitude,
+      longitude: first.longitude,
+    };
   } catch (error) {
     console.log(error);
     return null;
